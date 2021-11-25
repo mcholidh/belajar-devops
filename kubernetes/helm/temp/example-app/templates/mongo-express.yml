@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.mongoexpress.name }}
+  labels:
+    app: {{ .Values.mongoexpress.app }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.mongoexpress.app }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.mongoexpress.app }}
+    spec:
+      containers:
+      - name: {{ .Values.mongoexpress.name }}
+        image: {{ .Values.mongoexpress.image }}
+        ports:
+        - containerPort: {{ .Values.mongoexpress.port }}
+        env:
+        - name: ME_CONFIG_MONGODB_ADMINUSERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: mongo-root-username
+        - name: ME_CONFIG_MONGODB_ADMINPASSWORD
+          valueFrom: 
+            secretKeyRef:
+              name: mongodb-secret
+              key: mongo-root-password
+        - name: ME_CONFIG_MONGODB_SERVER
+          valueFrom: 
+            configMapKeyRef:
+              name: mongodb-configmap
+              key: database_url
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.mongoexpress.service }}
+spec:
+  selector:
+    app: {{ .Values.mongoexpress.app }}
+  type: LoadBalancer  
+  ports:
+    - protocol: TCP
+      port: {{ .Values.mongoexpress.port }}
+      targetPort: {{ .Values.mongoexpress.port }}
+      nodePort: {{ .Values.mongoexpress.nodeport }}
